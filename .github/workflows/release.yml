@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            suffix: ""
+          - goos: linux
+            goarch: arm64
+            suffix: ""
+          - goos: darwin
+            goarch: arm64
+            suffix: ""
+          - goos: windows
+            goarch: amd64
+            suffix: ".exe"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies & build Tailwind
+        run: |
+          npm install
+          npx tailwindcss -i web/static/input.css -o web/static/tailwind.css --minify
+      - name: Build
+        run: >
+          CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }}
+          go build -ldflags="-s -w"
+          -o wink-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.suffix }}
+          ./cmd/server
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wink-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: wink-${{ matrix.goos }}-${{ matrix.goarch }}*
+
+  publish:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

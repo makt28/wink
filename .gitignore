@@ -1,0 +1,11 @@
+config.json
+history.json
+incidents.json
+wink
+dist/
+*.tmp
+.DS_Store
+test/
+node_modules/
+package-lock.json
+CLAUDE.md

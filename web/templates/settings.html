@@ -1,0 +1,510 @@
+{{template "layout" .}}
+{{define "content"}}
+<div class="max-w-2xl mx-auto px-4 py-6">
+    <h2 class="text-xl font-semibold mb-6 text-gray-900 dark:text-white">{{t .Lang "settings.title"}}</h2>
+
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+
+    <!-- System Settings -->
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-8">
+        <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">{{t .Lang "settings.system"}}</h3>
+        <form method="POST" action="/settings/system" class="space-y-4">
+            <div class="grid grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t .Lang "settings.bind_host"}}</label>
+                    <input type="text" name="bind_host" id="bind_host" placeholder="0.0.0.0"
+                        class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{t .Lang "settings.bind_host_hint"}}</p>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t .Lang "settings.bind_port"}}</label>
+                    <input type="text" name="bind_port" id="bind_port" placeholder="8080"
+                        class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{t .Lang "settings.bind_restart"}}</p>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t .Lang "settings.check_interval"}}</label>
+                    <input type="number" name="check_interval" value="{{.System.CheckInterval}}" min="5"
+                        class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t .Lang "settings.max_history"}}</label>
+                    <input type="number" name="max_history_points" value="{{.System.MaxHistoryPoints}}" min="100"
+                        class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t .Lang "settings.dump_interval"}}</label>
+                    <input type="number" name="dump_interval" value="{{.System.DumpInterval}}" min="10"
+                        class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t .Lang "settings.session_ttl"}}</label>
+                    <input type="number" name="session_ttl" value="{{.System.SessionTTL}}" min="60"
+                        class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t .Lang "settings.log_level"}}</label>
+                    <select name="log_level"
+                        class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                        <option value="debug" {{if eq .System.LogLevel "debug"}}selected{{end}}>debug</option>
+                        <option value="info" {{if eq .System.LogLevel "info"}}selected{{end}}>info</option>
+                        <option value="warn" {{if eq .System.LogLevel "warn"}}selected{{end}}>warn</option>
+                        <option value="error" {{if eq .System.LogLevel "error"}}selected{{end}}>error</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t .Lang "settings.max_monitors"}}</label>
+                    <input type="number" name="max_monitors" value="{{.System.MaxMonitors}}" min="1"
+                        class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t .Lang "settings.timezone"}}</label>
+                <select name="timezone"
+                    class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                    <option value="UTC" {{if eq .System.Timezone "UTC"}}selected{{end}}>(UTC+00:00) UTC</option>
+                    <option value="Pacific/Midway" {{if eq .System.Timezone "Pacific/Midway"}}selected{{end}}>(UTC-11:00) Pacific/Midway</option>
+                    <option value="Pacific/Honolulu" {{if eq .System.Timezone "Pacific/Honolulu"}}selected{{end}}>(UTC-10:00) Pacific/Honolulu</option>
+                    <option value="America/Anchorage" {{if eq .System.Timezone "America/Anchorage"}}selected{{end}}>(UTC-09:00) America/Anchorage</option>
+                    <option value="America/Los_Angeles" {{if eq .System.Timezone "America/Los_Angeles"}}selected{{end}}>(UTC-08:00) America/Los_Angeles</option>
+                    <option value="America/Vancouver" {{if eq .System.Timezone "America/Vancouver"}}selected{{end}}>(UTC-08:00) America/Vancouver</option>
+                    <option value="America/Denver" {{if eq .System.Timezone "America/Denver"}}selected{{end}}>(UTC-07:00) America/Denver</option>
+                    <option value="America/Phoenix" {{if eq .System.Timezone "America/Phoenix"}}selected{{end}}>(UTC-07:00) America/Phoenix</option>
+                    <option value="America/Chicago" {{if eq .System.Timezone "America/Chicago"}}selected{{end}}>(UTC-06:00) America/Chicago</option>
+                    <option value="America/Mexico_City" {{if eq .System.Timezone "America/Mexico_City"}}selected{{end}}>(UTC-06:00) America/Mexico_City</option>
+                    <option value="America/New_York" {{if eq .System.Timezone "America/New_York"}}selected{{end}}>(UTC-05:00) America/New_York</option>
+                    <option value="America/Toronto" {{if eq .System.Timezone "America/Toronto"}}selected{{end}}>(UTC-05:00) America/Toronto</option>
+                    <option value="America/Bogota" {{if eq .System.Timezone "America/Bogota"}}selected{{end}}>(UTC-05:00) America/Bogota</option>
+                    <option value="America/Lima" {{if eq .System.Timezone "America/Lima"}}selected{{end}}>(UTC-05:00) America/Lima</option>
+                    <option value="America/Halifax" {{if eq .System.Timezone "America/Halifax"}}selected{{end}}>(UTC-04:00) America/Halifax</option>
+                    <option value="America/Santiago" {{if eq .System.Timezone "America/Santiago"}}selected{{end}}>(UTC-04:00) America/Santiago</option>
+                    <option value="America/Caracas" {{if eq .System.Timezone "America/Caracas"}}selected{{end}}>(UTC-04:00) America/Caracas</option>
+                    <option value="America/Sao_Paulo" {{if eq .System.Timezone "America/Sao_Paulo"}}selected{{end}}>(UTC-03:00) America/Sao_Paulo</option>
+                    <option value="America/Argentina/Buenos_Aires" {{if eq .System.Timezone "America/Argentina/Buenos_Aires"}}selected{{end}}>(UTC-03:00) America/Argentina/Buenos_Aires</option>
+                    <option value="Atlantic/South_Georgia" {{if eq .System.Timezone "Atlantic/South_Georgia"}}selected{{end}}>(UTC-02:00) Atlantic/South_Georgia</option>
+                    <option value="Atlantic/Azores" {{if eq .System.Timezone "Atlantic/Azores"}}selected{{end}}>(UTC-01:00) Atlantic/Azores</option>
+                    <option value="Atlantic/Cape_Verde" {{if eq .System.Timezone "Atlantic/Cape_Verde"}}selected{{end}}>(UTC-01:00) Atlantic/Cape_Verde</option>
+                    <option value="Europe/London" {{if eq .System.Timezone "Europe/London"}}selected{{end}}>(UTC+00:00) Europe/London</option>
+                    <option value="Europe/Dublin" {{if eq .System.Timezone "Europe/Dublin"}}selected{{end}}>(UTC+00:00) Europe/Dublin</option>
+                    <option value="Africa/Casablanca" {{if eq .System.Timezone "Africa/Casablanca"}}selected{{end}}>(UTC+00:00) Africa/Casablanca</option>
+                    <option value="Europe/Berlin" {{if eq .System.Timezone "Europe/Berlin"}}selected{{end}}>(UTC+01:00) Europe/Berlin</option>
+                    <option value="Europe/Paris" {{if eq .System.Timezone "Europe/Paris"}}selected{{end}}>(UTC+01:00) Europe/Paris</option>
+                    <option value="Europe/Madrid" {{if eq .System.Timezone "Europe/Madrid"}}selected{{end}}>(UTC+01:00) Europe/Madrid</option>
+                    <option value="Europe/Rome" {{if eq .System.Timezone "Europe/Rome"}}selected{{end}}>(UTC+01:00) Europe/Rome</option>
+                    <option value="Europe/Amsterdam" {{if eq .System.Timezone "Europe/Amsterdam"}}selected{{end}}>(UTC+01:00) Europe/Amsterdam</option>
+                    <option value="Africa/Lagos" {{if eq .System.Timezone "Africa/Lagos"}}selected{{end}}>(UTC+01:00) Africa/Lagos</option>
+                    <option value="Europe/Helsinki" {{if eq .System.Timezone "Europe/Helsinki"}}selected{{end}}>(UTC+02:00) Europe/Helsinki</option>
+                    <option value="Europe/Athens" {{if eq .System.Timezone "Europe/Athens"}}selected{{end}}>(UTC+02:00) Europe/Athens</option>
+                    <option value="Europe/Bucharest" {{if eq .System.Timezone "Europe/Bucharest"}}selected{{end}}>(UTC+02:00) Europe/Bucharest</option>
+                    <option value="Europe/Kiev" {{if eq .System.Timezone "Europe/Kiev"}}selected{{end}}>(UTC+02:00) Europe/Kiev</option>
+                    <option value="Africa/Cairo" {{if eq .System.Timezone "Africa/Cairo"}}selected{{end}}>(UTC+02:00) Africa/Cairo</option>
+                    <option value="Africa/Johannesburg" {{if eq .System.Timezone "Africa/Johannesburg"}}selected{{end}}>(UTC+02:00) Africa/Johannesburg</option>
+                    <option value="Asia/Jerusalem" {{if eq .System.Timezone "Asia/Jerusalem"}}selected{{end}}>(UTC+02:00) Asia/Jerusalem</option>
+                    <option value="Europe/Moscow" {{if eq .System.Timezone "Europe/Moscow"}}selected{{end}}>(UTC+03:00) Europe/Moscow</option>
+                    <option value="Europe/Istanbul" {{if eq .System.Timezone "Europe/Istanbul"}}selected{{end}}>(UTC+03:00) Europe/Istanbul</option>
+                    <option value="Asia/Riyadh" {{if eq .System.Timezone "Asia/Riyadh"}}selected{{end}}>(UTC+03:00) Asia/Riyadh</option>
+                    <option value="Africa/Nairobi" {{if eq .System.Timezone "Africa/Nairobi"}}selected{{end}}>(UTC+03:00) Africa/Nairobi</option>
+                    <option value="Asia/Tehran" {{if eq .System.Timezone "Asia/Tehran"}}selected{{end}}>(UTC+03:30) Asia/Tehran</option>
+                    <option value="Asia/Dubai" {{if eq .System.Timezone "Asia/Dubai"}}selected{{end}}>(UTC+04:00) Asia/Dubai</option>
+                    <option value="Asia/Baku" {{if eq .System.Timezone "Asia/Baku"}}selected{{end}}>(UTC+04:00) Asia/Baku</option>
+                    <option value="Asia/Kabul" {{if eq .System.Timezone "Asia/Kabul"}}selected{{end}}>(UTC+04:30) Asia/Kabul</option>
+                    <option value="Asia/Karachi" {{if eq .System.Timezone "Asia/Karachi"}}selected{{end}}>(UTC+05:00) Asia/Karachi</option>
+                    <option value="Asia/Tashkent" {{if eq .System.Timezone "Asia/Tashkent"}}selected{{end}}>(UTC+05:00) Asia/Tashkent</option>
+                    <option value="Asia/Kolkata" {{if eq .System.Timezone "Asia/Kolkata"}}selected{{end}}>(UTC+05:30) Asia/Kolkata</option>
+                    <option value="Asia/Kathmandu" {{if eq .System.Timezone "Asia/Kathmandu"}}selected{{end}}>(UTC+05:45) Asia/Kathmandu</option>
+                    <option value="Asia/Dhaka" {{if eq .System.Timezone "Asia/Dhaka"}}selected{{end}}>(UTC+06:00) Asia/Dhaka</option>
+                    <option value="Asia/Almaty" {{if eq .System.Timezone "Asia/Almaty"}}selected{{end}}>(UTC+06:00) Asia/Almaty</option>
+                    <option value="Asia/Yangon" {{if eq .System.Timezone "Asia/Yangon"}}selected{{end}}>(UTC+06:30) Asia/Yangon</option>
+                    <option value="Asia/Bangkok" {{if eq .System.Timezone "Asia/Bangkok"}}selected{{end}}>(UTC+07:00) Asia/Bangkok</option>
+                    <option value="Asia/Ho_Chi_Minh" {{if eq .System.Timezone "Asia/Ho_Chi_Minh"}}selected{{end}}>(UTC+07:00) Asia/Ho_Chi_Minh</option>
+                    <option value="Asia/Jakarta" {{if eq .System.Timezone "Asia/Jakarta"}}selected{{end}}>(UTC+07:00) Asia/Jakarta</option>
+                    <option value="Asia/Shanghai" {{if eq .System.Timezone "Asia/Shanghai"}}selected{{end}}>(UTC+08:00) Asia/Shanghai</option>
+                    <option value="Asia/Hong_Kong" {{if eq .System.Timezone "Asia/Hong_Kong"}}selected{{end}}>(UTC+08:00) Asia/Hong_Kong</option>
+                    <option value="Asia/Taipei" {{if eq .System.Timezone "Asia/Taipei"}}selected{{end}}>(UTC+08:00) Asia/Taipei</option>
+                    <option value="Asia/Singapore" {{if eq .System.Timezone "Asia/Singapore"}}selected{{end}}>(UTC+08:00) Asia/Singapore</option>
+                    <option value="Asia/Kuala_Lumpur" {{if eq .System.Timezone "Asia/Kuala_Lumpur"}}selected{{end}}>(UTC+08:00) Asia/Kuala_Lumpur</option>
+                    <option value="Australia/Perth" {{if eq .System.Timezone "Australia/Perth"}}selected{{end}}>(UTC+08:00) Australia/Perth</option>
+                    <option value="Asia/Tokyo" {{if eq .System.Timezone "Asia/Tokyo"}}selected{{end}}>(UTC+09:00) Asia/Tokyo</option>
+                    <option value="Asia/Seoul" {{if eq .System.Timezone "Asia/Seoul"}}selected{{end}}>(UTC+09:00) Asia/Seoul</option>
+                    <option value="Australia/Darwin" {{if eq .System.Timezone "Australia/Darwin"}}selected{{end}}>(UTC+09:30) Australia/Darwin</option>
+                    <option value="Australia/Brisbane" {{if eq .System.Timezone "Australia/Brisbane"}}selected{{end}}>(UTC+10:00) Australia/Brisbane</option>
+                    <option value="Australia/Sydney" {{if eq .System.Timezone "Australia/Sydney"}}selected{{end}}>(UTC+10:00) Australia/Sydney</option>
+                    <option value="Australia/Melbourne" {{if eq .System.Timezone "Australia/Melbourne"}}selected{{end}}>(UTC+10:00) Australia/Melbourne</option>
+                    <option value="Pacific/Guam" {{if eq .System.Timezone "Pacific/Guam"}}selected{{end}}>(UTC+10:00) Pacific/Guam</option>
+                    <option value="Asia/Vladivostok" {{if eq .System.Timezone "Asia/Vladivostok"}}selected{{end}}>(UTC+10:00) Asia/Vladivostok</option>
+                    <option value="Pacific/Noumea" {{if eq .System.Timezone "Pacific/Noumea"}}selected{{end}}>(UTC+11:00) Pacific/Noumea</option>
+                    <option value="Pacific/Auckland" {{if eq .System.Timezone "Pacific/Auckland"}}selected{{end}}>(UTC+12:00) Pacific/Auckland</option>
+                    <option value="Pacific/Fiji" {{if eq .System.Timezone "Pacific/Fiji"}}selected{{end}}>(UTC+12:00) Pacific/Fiji</option>
+                    <option value="Pacific/Tongatapu" {{if eq .System.Timezone "Pacific/Tongatapu"}}selected{{end}}>(UTC+13:00) Pacific/Tongatapu</option>
+                    <option value="Pacific/Apia" {{if eq .System.Timezone "Pacific/Apia"}}selected{{end}}>(UTC+13:00) Pacific/Apia</option>
+                </select>
+            </div>
+            <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded transition-colors">
+                {{t .Lang "settings.save_system"}}
+            </button>
+        </form>
+    </div>
+
+    <!-- Authentication Settings -->
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-8">
+        <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">{{t .Lang "settings.auth"}}</h3>
+        <form method="POST" action="/settings/auth" class="space-y-4">
+            <div>
+                <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t .Lang "settings.username"}}</label>
+                <input type="text" name="username" value="{{.Auth.Username}}"
+                    class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t .Lang "settings.new_password"}}</label>
+                    <input type="password" name="new_password"
+                        class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t .Lang "settings.confirm_password"}}</label>
+                    <input type="password" name="confirm_password"
+                        class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+            <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded transition-colors">
+                {{t .Lang "settings.update_auth"}}
+            </button>
+        </form>
+    </div>
+
+    <!-- SSO Settings -->
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-8">
+        <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">{{t .Lang "settings.sso"}}</h3>
+        <form method="POST" action="/settings/sso" class="space-y-4">
+            <div class="flex items-center gap-3">
+                <input type="checkbox" name="sso_enabled" id="sso_enabled" {{if .Auth.SSO.Enabled}}checked{{end}}
+                    class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                <label for="sso_enabled" class="text-sm text-gray-700 dark:text-gray-300">{{t .Lang "settings.sso_enabled"}}</label>
+            </div>
+            <p class="text-xs text-gray-400 dark:text-gray-500">{{t .Lang "settings.sso_hint"}}</p>
+            <div class="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded px-4 py-3 text-sm text-yellow-700 dark:text-yellow-300">
+                {{t .Lang "settings.sso_security_warning"}}
+            </div>
+            <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded transition-colors">
+                {{t .Lang "settings.save_sso"}}
+            </button>
+        </form>
+    </div>
+
+    <!-- Groups (monitor visual grouping) -->
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-8">
+        <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">{{t .Lang "settings.groups"}}</h3>
+
+        {{range .Groups}}
+        <div class="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 rounded px-4 py-3 mb-2">
+            <span class="font-medium text-gray-900 dark:text-white">{{.Name}}</span>
+            <form method="POST" action="/settings/groups/delete">
+                <input type="hidden" name="group_id" value="{{.ID}}">
+                <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm">{{t $.Lang "settings.delete_group"}}</button>
+            </form>
+        </div>
+        {{end}}
+
+        <form method="POST" action="/settings/groups" class="flex gap-3 mt-4">
+            <input type="text" name="group_name" placeholder="{{t .Lang "settings.group_name"}}"
+                class="flex-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+            <button type="submit"
+                class="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded transition-colors">
+                {{t .Lang "settings.add_group"}}
+            </button>
+        </form>
+    </div>
+
+    <!-- Notifiers (flat, independent of groups) -->
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+        <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">{{t .Lang "settings.notifiers"}}</h3>
+
+        {{range .AllNotifiers}}
+        <div class="mb-2" data-notifier-id="{{.ID}}">
+            <!-- Notifier row -->
+            <div class="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded px-4 py-3">
+                <div class="flex items-center gap-2 text-gray-700 dark:text-gray-300 cursor-pointer flex-1 min-w-0" onclick="toggleNotifierEdit('{{.ID}}')">
+                    {{if eq .Type "telegram"}}
+                    <span class="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-medium flex-shrink-0">Telegram</span>
+                    {{else if eq .Type "webhook"}}
+                    <span class="px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 text-xs font-medium flex-shrink-0">Webhook</span>
+                    {{end}}
+                    {{if .Remark}}<span class="font-medium text-gray-900 dark:text-white truncate">{{.Remark}}</span><span class="text-gray-400">-</span>{{end}}
+                    {{if eq .Type "telegram"}}<span class="truncate text-gray-500 dark:text-gray-400">{{.ChatID}}</span>
+                    {{else if eq .Type "webhook"}}<span class="truncate text-gray-500 dark:text-gray-400">{{.URL}}</span>{{end}}
+                </div>
+                <div class="flex items-center gap-3">
+                    <button type="button" onclick="testNotifier('{{.ID}}', this)" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm">{{t $.Lang "settings.test_notifier"}}</button>
+                    <button type="button" onclick="toggleNotifierEdit('{{.ID}}')" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 text-sm">{{t $.Lang "settings.edit_notifier"}}</button>
+                    <form method="POST" action="/settings/notifiers/delete" class="inline">
+                        <input type="hidden" name="notifier_id" value="{{.ID}}">
+                        <button type="submit" class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm">{{t $.Lang "settings.delete_notifier"}}</button>
+                    </form>
+                </div>
+            </div>
+            <!-- Inline edit form (hidden by default) -->
+            <div id="edit-{{.ID}}" class="hidden mt-1 bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-600 rounded p-4">
+                <form method="POST" action="/settings/notifiers/update" class="space-y-4">
+                    <input type="hidden" name="notifier_id" value="{{.ID}}">
+                    <input type="hidden" name="type" value="{{.Type}}">
+                    <div>
+                        <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t $.Lang "settings.remark"}}</label>
+                        <input type="text" name="remark" value="{{.Remark}}" placeholder="{{t $.Lang "settings.remark_hint"}}"
+                            class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    {{if eq .Type "telegram"}}
+                    <div>
+                        <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t $.Lang "settings.bot_token"}}</label>
+                        <input type="text" name="bot_token" value="{{.BotToken}}"
+                            class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t $.Lang "settings.chat_id"}}</label>
+                        <div class="flex gap-2">
+                            <input type="text" name="chat_id" value="{{.ChatID}}"
+                                class="flex-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                            <button type="button" onclick="fetchChatIDs(this)" class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 text-sm px-3 py-2 rounded transition-colors whitespace-nowrap">{{t $.Lang "settings.fetch_chat_id"}}</button>
+                        </div>
+                        <div class="chat-id-results hidden mt-1"></div>
+                    </div>
+                    {{else if eq .Type "webhook"}}
+                    <div>
+                        <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t $.Lang "settings.webhook_url"}}</label>
+                        <input type="text" name="webhook_url" value="{{.URL}}"
+                            class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t $.Lang "settings.webhook_method"}}</label>
+                        <select name="webhook_method"
+                            class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                            <option value="POST" {{if eq .Method "POST"}}selected{{end}}>POST</option>
+                            <option value="GET" {{if eq .Method "GET"}}selected{{end}}>GET</option>
+                        </select>
+                    </div>
+                    {{end}}
+                    <div class="flex gap-2 pt-1">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded transition-colors">{{t $.Lang "settings.save_notifier"}}</button>
+                        <button type="button" onclick="toggleNotifierEdit('{{.ID}}')" class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 px-4 py-2 rounded transition-colors">{{t $.Lang "settings.cancel_edit"}}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {{end}}
+
+        <!-- Add notifier form -->
+        <form method="POST" action="/settings/notifiers" class="mt-4 space-y-4 border-t border-gray-200 dark:border-gray-600 pt-4" id="add-notifier-form">
+            <div>
+                <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t .Lang "settings.remark"}}</label>
+                <input type="text" name="remark" placeholder="{{t .Lang "settings.remark_hint"}}"
+                    class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t .Lang "settings.notifier_type"}}</label>
+                <select name="type" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500" onchange="var p=this.closest('form'); p.querySelector('.tg-fields').classList.toggle('hidden',this.value!=='telegram'); p.querySelector('.wh-fields').classList.toggle('hidden',this.value!=='webhook');">
+                    <option value="telegram">Telegram</option>
+                    <option value="webhook">Webhook</option>
+                </select>
+            </div>
+            <div class="tg-fields space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t .Lang "settings.bot_token"}}</label>
+                    <input type="text" name="bot_token" placeholder="123456:ABC..."
+                        class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t .Lang "settings.chat_id"}}</label>
+                    <div class="flex gap-2">
+                        <input type="text" name="chat_id" placeholder="-100123..."
+                            class="flex-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                        <button type="button" onclick="fetchChatIDs(this)" class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 text-sm px-3 py-2 rounded transition-colors whitespace-nowrap">{{t .Lang "settings.fetch_chat_id"}}</button>
+                    </div>
+                    <div class="chat-id-results hidden mt-1"></div>
+                </div>
+            </div>
+            <div class="wh-fields hidden space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t .Lang "settings.webhook_url"}}</label>
+                    <input type="text" name="webhook_url" placeholder="https://hooks.example.com/alert"
+                        class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">{{t .Lang "settings.webhook_method"}}</label>
+                    <select name="webhook_method"
+                        class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+                        <option value="POST">POST</option>
+                        <option value="GET">GET</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded transition-colors">
+                {{t .Lang "settings.add_notifier"}}
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+var _i18n = {{toJSON .I18nStrings}};
+
+function showToast(msg, type) {
+    var c = document.getElementById('toast-container');
+    var t = document.createElement('div');
+    t.className = 'px-4 py-3 rounded-lg shadow-lg text-sm font-medium max-w-sm cursor-pointer transition-opacity duration-300 ' +
+        (type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white');
+    t.textContent = msg;
+    t.onclick = function() { t.remove(); };
+    c.appendChild(t);
+    setTimeout(function() {
+        t.style.opacity = '0';
+        setTimeout(function() { t.remove(); }, 300);
+    }, 4000);
+}
+
+(function() {
+    var _flash = {{toJSON .Flash}};
+    var _flashType = {{toJSON .FlashType}};
+    if (_flash) {
+        showToast(_flash, _flashType || 'success');
+        if (window.history.replaceState) {
+            var u = new URL(window.location);
+            u.searchParams.delete('saved');
+            window.history.replaceState({}, '', u);
+        }
+    }
+})();
+
+document.querySelectorAll('form[action^="/settings"]').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        fetch(form.action, {
+            method: 'POST',
+            body: new URLSearchParams(new FormData(form)),
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
+            redirect: 'manual'
+        }).then(function(resp) {
+            if (resp.type === 'opaqueredirect') {
+                window.location.href = '/settings?saved=1';
+                return null;
+            }
+            return resp.json();
+        }).then(function(data) {
+            if (data && data.message) {
+                showToast(data.message, 'error');
+            }
+        }).catch(function() {
+            form.submit();
+        });
+    });
+});
+
+(function() {
+    var addr = {{toJSON .System.BindAddress}};
+    var lastColon = addr.lastIndexOf(':');
+    var host = '', port = '';
+    if (lastColon >= 0) {
+        host = addr.substring(0, lastColon);
+        port = addr.substring(lastColon + 1);
+    } else {
+        port = addr;
+    }
+    var hostEl = document.getElementById('bind_host');
+    var portEl = document.getElementById('bind_port');
+    if (hostEl) hostEl.value = host;
+    if (portEl) portEl.value = port;
+})();
+
+function toggleNotifierEdit(id) {
+    var el = document.getElementById('edit-' + id);
+    if (el) el.classList.toggle('hidden');
+}
+
+function testNotifier(id, btn) {
+    var origText = btn.textContent;
+    btn.textContent = '...';
+    btn.disabled = true;
+    fetch('/api/notifiers/' + id + '/test', {method: 'POST'})
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.ok) {
+                btn.textContent = _i18n['settings.test_success'] || 'Sent!';
+                btn.classList.remove('text-blue-600','dark:text-blue-400');
+                btn.classList.add('text-green-600','dark:text-green-400');
+            } else {
+                btn.textContent = (_i18n['settings.test_failed'] || 'Failed') + (data.error ? ': ' + data.error : '');
+                btn.classList.remove('text-blue-600','dark:text-blue-400');
+                btn.classList.add('text-red-600','dark:text-red-400');
+            }
+            setTimeout(function() {
+                btn.textContent = origText;
+                btn.disabled = false;
+                btn.classList.remove('text-green-600','dark:text-green-400','text-red-600','dark:text-red-400');
+                btn.classList.add('text-blue-600','dark:text-blue-400');
+            }, 3000);
+        })
+        .catch(function() {
+            btn.textContent = _i18n['settings.test_failed'] || 'Failed';
+            setTimeout(function() { btn.textContent = origText; btn.disabled = false; }, 3000);
+        });
+}
+
+function fetchChatIDs(btn) {
+    var form = btn.closest('form');
+    var tokenInput = form.querySelector('input[name="bot_token"]');
+    var resultsDiv = btn.closest('div').parentElement.querySelector('.chat-id-results');
+    var token = tokenInput ? tokenInput.value.trim() : '';
+    if (!token) { tokenInput.focus(); return; }
+
+    btn.disabled = true;
+    var origText = btn.textContent;
+    btn.textContent = '...';
+
+    fetch('/api/telegram/get-updates', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({bot_token: token})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        btn.textContent = origText;
+        btn.disabled = false;
+        resultsDiv.classList.remove('hidden');
+        if (!data.chats || data.chats.length === 0) {
+            resultsDiv.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 py-1">' + (_i18n['settings.no_chats_found'] || 'No chats found') + '</p>';
+            return;
+        }
+        var html = '';
+        data.chats.forEach(function(c) {
+            var label = c.title + ' <span class="text-gray-400">(' + c.id + ', ' + c.type + ')</span>';
+            if (c.message) {
+                label += ' <span class="text-gray-400 italic">"' + c.message.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '"</span>';
+            }
+            html += '<button type="button" onclick="pickChatID(this, \'' + c.id.replace(/'/g, "\\'") + '\')" class="block w-full text-left text-xs px-2 py-1 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded text-gray-700 dark:text-gray-300">' +
+                label + '</button>';
+        });
+        resultsDiv.innerHTML = html;
+    })
+    .catch(function() {
+        btn.textContent = origText;
+        btn.disabled = false;
+        resultsDiv.classList.remove('hidden');
+        resultsDiv.innerHTML = '<p class="text-xs text-red-500 py-1">Error fetching chats</p>';
+    });
+}
+
+function pickChatID(btn, chatID) {
+    var form = btn.closest('form');
+    var chatInput = form.querySelector('input[name="chat_id"]');
+    if (chatInput) chatInput.value = chatID;
+    var resultsDiv = btn.closest('.chat-id-results');
+    if (resultsDiv) resultsDiv.classList.add('hidden');
+}
+</script>
+{{end}}

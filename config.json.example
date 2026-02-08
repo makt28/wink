@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "system": {
+    "bind_address": ":8080",
+    "check_interval": 60,
+    "max_history_points": 1440,
+    "dump_interval": 300,
+    "session_ttl": 86400,
+    "log_level": "info",
+    "max_monitors": 500
+  },
+  "auth": {
+    "username": "admin",
+    "password_hash": "$2a$10$8.FeSs3eopZT0s/fCTdMWuE8U4f/Dv.ERy10fqrb9QnpHNknp8i/q",
+    "max_login_attempts": 5,
+    "lockout_duration": 900
+  },
+  "contact_groups": {
+    "default": {
+      "id": "default",
+      "name": "Default"
+    }
+  },
+  "notifiers": [
+    {
+      "id": "example-tg",
+      "type": "telegram",
+      "bot_token": "YOUR_BOT_TOKEN",
+      "chat_id": "YOUR_CHAT_ID"
+    }
+  ],
+  "monitors": [
+    {
+      "id": "example-1",
+      "name": "Example HTTP",
+      "type": "http",
+      "target": "https://example.com",
+      "group_id": "default",
+      "interval": 60,
+      "timeout": 5,
+      "max_retries": 3,
+      "retry_interval": 0,
+      "reminder_interval": 0,
+      "ignore_tls": false
+    }
+  ]
+}
