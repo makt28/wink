@@ -135,7 +135,18 @@ func (a *Analyzer) RemoveState(monitorID string) {
 func (a *Analyzer) ensureState(id string) *monitorState {
 	s, ok := a.states[id]
 	if !ok {
-		s = &monitorState{isUp: true}
+		isUp := true
+		// Restore state from persisted incidents: if there is an unresolved
+		// incident, the monitor was DOWN before the process restarted.
+		if h := a.histMgr.GetMonitor(id); h != nil {
+			for _, inc := range h.Incidents {
+				if inc.ResolvedAt == nil {
+					isUp = false
+					break
+				}
+			}
+		}
+		s = &monitorState{isUp: isUp}
 		a.states[id] = s
 	}
 	return s
