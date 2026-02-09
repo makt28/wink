@@ -3,6 +3,8 @@
   "nav.add_monitor": "添加监控",
   "nav.settings": "设置",
   "nav.groups": "分组",
+  "nav.theme_light": "浅色模式",
+  "nav.theme_dark": "深色模式",
   "nav.logout": "退出登录",
 
   "login.title": "Wink",

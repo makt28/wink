@@ -26,27 +26,50 @@
         </div>
         <div class="flex items-center gap-5">
             <a href="/monitors/new" class="text-sm bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded text-white">{{t .Lang "nav.add_monitor"}}</a>
-            <a href="/groups" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">{{t .Lang "nav.groups"}}</a>
-            <a href="/settings" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">{{t .Lang "nav.settings"}}</a>
+            <!-- Desktop nav items -->
+            <a href="/groups" class="hidden sm:inline text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">{{t .Lang "nav.groups"}}</a>
+            <a href="/settings" class="hidden sm:inline text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">{{t .Lang "nav.settings"}}</a>
             {{if eq .Lang "zh"}}
-            <a href="/lang?l=en" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">{{t .Lang "lang.switch"}}</a>
+            <a href="/lang?l=en" class="hidden sm:inline text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">{{t .Lang "lang.switch"}}</a>
             {{else}}
-            <a href="/lang?l=zh" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">{{t .Lang "lang.switch"}}</a>
+            <a href="/lang?l=zh" class="hidden sm:inline text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">{{t .Lang "lang.switch"}}</a>
             {{end}}
-            <!-- Theme toggle -->
-            <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" title="Toggle theme">
-                <!-- Sun icon (shown in dark mode) -->
+            <button id="theme-toggle" type="button" class="hidden sm:inline text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" title="Toggle theme">
                 <svg class="w-5 h-5 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
                 </svg>
-                <!-- Moon icon (shown in light mode) -->
                 <svg class="w-5 h-5 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
                 </svg>
             </button>
-            <form method="POST" action="/logout">
+            <form method="POST" action="/logout" class="hidden sm:block">
                 <button type="submit" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">{{t .Lang "nav.logout"}}</button>
             </form>
+            <!-- Mobile hamburger -->
+            <div class="relative sm:hidden">
+                <button id="nav-menu-btn" type="button" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+                <div id="nav-menu" class="hidden absolute right-0 top-full mt-2 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 z-50">
+                    <a href="/groups" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{{t .Lang "nav.groups"}}</a>
+                    <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{{t .Lang "nav.settings"}}</a>
+                    {{if eq .Lang "zh"}}
+                    <a href="/lang?l=en" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{{t .Lang "lang.switch"}}</a>
+                    {{else}}
+                    <a href="/lang?l=zh" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{{t .Lang "lang.switch"}}</a>
+                    {{end}}
+                    <button id="theme-toggle-mobile" type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <span class="hidden dark:inline">{{t .Lang "nav.theme_light"}}</span>
+                        <span class="inline dark:hidden">{{t .Lang "nav.theme_dark"}}</span>
+                    </button>
+                    <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                    <form method="POST" action="/logout">
+                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{{t .Lang "nav.logout"}}</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </nav>
     <main>
@@ -55,6 +78,28 @@
     <script src="/static/app.js"></script>
     <script>
     (function(){
+        // Mobile nav menu toggle
+        var menuBtn = document.getElementById('nav-menu-btn');
+        var menu = document.getElementById('nav-menu');
+        if (menuBtn && menu) {
+            menuBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                menu.classList.toggle('hidden');
+            });
+            document.addEventListener('click', function() {
+                menu.classList.add('hidden');
+            });
+        }
+        // Mobile theme toggle
+        var themeMobile = document.getElementById('theme-toggle-mobile');
+        if (themeMobile) {
+            themeMobile.addEventListener('click', function() {
+                var themeBtn = document.getElementById('theme-toggle');
+                if (themeBtn) themeBtn.click();
+                menu.classList.add('hidden');
+            });
+        }
+        // Check update
         fetch('/api/check-update').then(function(r){return r.json()}).then(function(d){
             if(d.has_update){
                 var el=document.getElementById('update-hint');

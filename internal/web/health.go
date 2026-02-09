@@ -10,7 +10,7 @@ import (
 
 var startTime = time.Now()
 
-const version = "0.1.0"
+const version = "0.1.3"
 
 // HealthHandler serves the /healthz endpoint.
 type HealthHandler struct {

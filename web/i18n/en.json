@@ -3,6 +3,8 @@
   "nav.add_monitor": "Add Monitor",
   "nav.settings": "Settings",
   "nav.groups": "Groups",
+  "nav.theme_light": "Light Mode",
+  "nav.theme_dark": "Dark Mode",
   "nav.logout": "Logout",
 
   "login.title": "Wink",
