@@ -8,10 +8,10 @@ tailwind:
 	npx tailwindcss -i web/static/input.css -o web/static/tailwind.css --minify
 
 build: tailwind fmt vet
-	$(GO) build -o $(BINARY_NAME) ./cmd/server
+	CGO_ENABLED=0 $(GO) build -ldflags="$(LDFLAGS)" -o $(BINARY_NAME) ./cmd/server
 
 dev:
-	$(GO) run ./cmd/server
+	CGO_ENABLED=0 $(GO) run -ldflags="$(LDFLAGS)" ./cmd/server
 
 fmt:
 	$(GO) fmt ./...
