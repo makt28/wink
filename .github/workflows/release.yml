@@ -8,7 +8,22 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  tailwind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx tailwindcss -i web/static/input.css -o web/static/tailwind.css --minify
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tailwind-css
+          path: web/static/tailwind.css
+
+  build:
+    needs: tailwind
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -30,13 +45,10 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - uses: actions/setup-node@v4
+      - uses: actions/download-artifact@v4
         with:
-          node-version: '22'
-      - name: Install dependencies & build Tailwind
-        run: |
-          npm install
-          npx tailwindcss -i web/static/input.css -o web/static/tailwind.css --minify
+          name: tailwind-css
+          path: web/static
       - name: Build
         run: >
           CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }}
@@ -49,7 +61,7 @@ jobs:
           path: wink-${{ matrix.goos }}-${{ matrix.goarch }}*
 
   publish:
-    needs: release
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
