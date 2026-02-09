@@ -54,7 +54,7 @@ var jsI18nKeys = []string{
 	"dash.no_incidents", "dash.ongoing", "dash.last_check",
 	"dash.duration", "dash.response_time", "dash.heartbeat",
 	"dash.incidents", "dash.select_monitor", "dash.back",
-	"dash.edit", "dash.delete", "dash.delete_confirm",
+	"dash.edit", "dash.clone", "dash.delete", "dash.delete_confirm",
 	"dash.type", "dash.interval",
 	"dash.pause", "dash.resume", "dash.status_paused",
 	"dash.ungrouped",
@@ -93,7 +93,7 @@ func NewTemplateRenderer() *TemplateRenderer {
 		},
 	}
 
-	pages := []string{"dashboard.html", "monitor_form.html", "settings.html"}
+	pages := []string{"dashboard.html", "monitor_form.html", "settings.html", "groups.html"}
 	templates := make(map[string]*template.Template)
 
 	for _, page := range pages {
@@ -213,6 +213,7 @@ func NewRouter(cfgMgr *config.Manager, histMgr *storage.HistoryManager, stopCh <
 		r.Get("/monitors/new", handlers.MonitorForm)
 		r.Post("/monitors", handlers.CreateMonitor)
 		r.Get("/monitors/{id}/edit", handlers.EditMonitorForm)
+		r.Get("/monitors/{id}/clone", handlers.CloneMonitorForm)
 		r.Post("/monitors/{id}", handlers.UpdateMonitor)
 		r.Post("/monitors/delete", handlers.DeleteMonitor)
 
@@ -221,12 +222,14 @@ func NewRouter(cfgMgr *config.Manager, histMgr *storage.HistoryManager, stopCh <
 		r.Get("/api/monitors/{id}", handlers.APIMonitorDetail)
 		r.Post("/api/monitors/{id}/toggle", handlers.ToggleMonitor)
 
+		r.Get("/groups", handlers.GroupsPage)
 		r.Get("/settings", handlers.SettingsPage)
 		r.Post("/settings/system", handlers.SaveSystem)
 		r.Post("/settings/auth", handlers.SaveAuth)
 		r.Post("/settings/sso", handlers.SaveSSO)
 		r.Post("/settings/groups", handlers.CreateGroup)
 		r.Post("/settings/groups/delete", handlers.DeleteGroup)
+		r.Post("/settings/groups/rename", handlers.RenameGroup)
 		r.Post("/settings/notifiers", handlers.AddNotifierFlat)
 		r.Post("/settings/notifiers/update", handlers.UpdateNotifier)
 		r.Post("/settings/notifiers/delete", handlers.DeleteNotifierByID)

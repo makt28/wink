@@ -1,0 +1,112 @@
+{{template "layout" .}}
+{{define "content"}}
+<div class="max-w-2xl mx-auto px-4 py-6">
+    <h2 class="text-xl font-semibold mb-6 text-gray-900 dark:text-white">{{t .Lang "groups.title"}}</h2>
+
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+        {{range $id, $group := .Groups}}
+        <div class="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 rounded px-4 py-3 mb-2" data-group-id="{{$group.ID}}">
+            <!-- Display mode -->
+            <div class="flex items-center gap-2 flex-1 min-w-0 group-display-{{$group.ID}}">
+                <span class="font-medium text-gray-900 dark:text-white truncate">{{$group.Name}}</span>
+            </div>
+            <div class="flex items-center gap-3 group-display-{{$group.ID}}">
+                <button type="button" onclick="toggleGroupEdit('{{$group.ID}}')" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 text-sm">{{t $.Lang "groups.rename"}}</button>
+                <form method="POST" action="/settings/groups/delete" class="inline group-delete-form">
+                    <input type="hidden" name="group_id" value="{{$group.ID}}">
+                    <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm">{{t $.Lang "settings.delete_group"}}</button>
+                </form>
+            </div>
+            <!-- Edit mode (hidden by default) -->
+            <form method="POST" action="/settings/groups/rename" class="hidden items-center gap-2 flex-1 group-edit-{{$group.ID}} group-rename-form">
+                <input type="hidden" name="group_id" value="{{$group.ID}}">
+                <input type="text" name="group_name" value="{{$group.Name}}"
+                    class="flex-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-1.5 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 text-sm">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-3 py-1.5 rounded text-sm transition-colors">{{t $.Lang "groups.save"}}</button>
+                <button type="button" onclick="toggleGroupEdit('{{$group.ID}}')" class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 px-3 py-1.5 rounded text-sm transition-colors">{{t $.Lang "groups.cancel"}}</button>
+            </form>
+        </div>
+        {{end}}
+
+        <form method="POST" action="/settings/groups" class="flex gap-3 mt-4 group-add-form">
+            <input type="text" name="group_name" placeholder="{{t .Lang "settings.group_name"}}"
+                class="flex-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+            <button type="submit"
+                class="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded transition-colors">
+                {{t .Lang "settings.add_group"}}
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+var _flash = {{toJSON .Flash}};
+var _flashType = {{toJSON .FlashType}};
+
+function showToast(msg, type) {
+    var c = document.getElementById('toast-container');
+    var t = document.createElement('div');
+    t.className = 'px-4 py-3 rounded-lg shadow-lg text-sm font-medium max-w-sm cursor-pointer transition-opacity duration-300 ' +
+        (type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white');
+    t.textContent = msg;
+    t.onclick = function() { t.remove(); };
+    c.appendChild(t);
+    setTimeout(function() {
+        t.style.opacity = '0';
+        setTimeout(function() { t.remove(); }, 300);
+    }, 4000);
+}
+
+(function() {
+    if (_flash) {
+        showToast(_flash, _flashType || 'success');
+        if (window.history.replaceState) {
+            var u = new URL(window.location);
+            u.searchParams.delete('saved');
+            window.history.replaceState({}, '', u);
+        }
+    }
+})();
+
+function toggleGroupEdit(id) {
+    var displays = document.querySelectorAll('.group-display-' + id);
+    var edit = document.querySelector('.group-edit-' + id);
+    if (!edit) return;
+    var isHidden = edit.classList.contains('hidden');
+    displays.forEach(function(el) { el.classList.toggle('hidden', isHidden); });
+    edit.classList.toggle('hidden', !isHidden);
+    if (isHidden) edit.classList.add('flex');
+    else edit.classList.remove('flex');
+    if (isHidden) {
+        var input = edit.querySelector('input[name="group_name"]');
+        if (input) { input.focus(); input.select(); }
+    }
+}
+
+document.querySelectorAll('.group-rename-form, .group-add-form, .group-delete-form').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        fetch(form.action, {
+            method: 'POST',
+            body: new URLSearchParams(new FormData(form)),
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
+            redirect: 'manual'
+        }).then(function(resp) {
+            if (resp.type === 'opaqueredirect') {
+                window.location.href = '/groups?saved=1';
+                return null;
+            }
+            return resp.json();
+        }).then(function(data) {
+            if (data && data.message) {
+                showToast(data.message, 'error');
+            }
+        }).catch(function() {
+            form.submit();
+        });
+    });
+});
+</script>
+{{end}}

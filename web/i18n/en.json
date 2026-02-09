@@ -2,6 +2,7 @@
   "nav.title": "Wink",
   "nav.add_monitor": "Add Monitor",
   "nav.settings": "Settings",
+  "nav.groups": "Groups",
   "nav.logout": "Logout",
 
   "login.title": "Wink",
@@ -15,6 +16,7 @@
   "dash.add_first": "Add your first monitor",
   "dash.delete": "Delete",
   "dash.edit": "Edit",
+  "dash.clone": "Clone",
   "dash.delete_confirm": "Delete this monitor?",
   "dash.select_monitor": "Select a monitor to view details",
   "dash.back": "Back",
@@ -87,6 +89,11 @@
   "settings.password_empty": "Password cannot be empty",
 
   "settings.groups": "Groups",
+  "groups.title": "Groups",
+  "groups.rename": "Rename",
+  "groups.save": "Save",
+  "groups.cancel": "Cancel",
+  "groups.saved": "Group saved successfully",
   "settings.notifiers": "Notifiers",
   "settings.group_name": "Group Name",
   "settings.add_group": "Add Group",

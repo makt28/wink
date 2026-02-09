@@ -352,8 +352,9 @@
           });
       };
 
-      // Edit & delete
+      // Edit, clone & delete
       document.getElementById('detail-edit').href = '/monitors/' + data.id + '/edit';
+      document.getElementById('detail-clone').href = '/monitors/' + data.id + '/clone';
       document.getElementById('detail-delete-id').value = data.id;
       document.getElementById('detail-delete-form').onsubmit = function () {
         return confirm(t('dash.delete_confirm'));

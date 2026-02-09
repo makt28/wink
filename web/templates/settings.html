@@ -198,30 +198,6 @@
         </form>
     </div>
 
-    <!-- Groups (monitor visual grouping) -->
-    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-8">
-        <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">{{t .Lang "settings.groups"}}</h3>
-
-        {{range .Groups}}
-        <div class="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 rounded px-4 py-3 mb-2">
-            <span class="font-medium text-gray-900 dark:text-white">{{.Name}}</span>
-            <form method="POST" action="/settings/groups/delete">
-                <input type="hidden" name="group_id" value="{{.ID}}">
-                <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm">{{t $.Lang "settings.delete_group"}}</button>
-            </form>
-        </div>
-        {{end}}
-
-        <form method="POST" action="/settings/groups" class="flex gap-3 mt-4">
-            <input type="text" name="group_name" placeholder="{{t .Lang "settings.group_name"}}"
-                class="flex-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
-            <button type="submit"
-                class="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded transition-colors">
-                {{t .Lang "settings.add_group"}}
-            </button>
-        </form>
-    </div>
-
     <!-- Notifiers (flat, independent of groups) -->
     <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
         <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">{{t .Lang "settings.notifiers"}}</h3>

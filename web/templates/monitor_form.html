@@ -2,7 +2,7 @@
 {{define "content"}}
 <div class="max-w-lg mx-auto px-4 py-6">
     <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
-    {{if .IsEdit}}
+    {{if and .IsEdit (not .IsClone)}}
     <h2 class="text-lg font-semibold mb-6 text-gray-900 dark:text-white">{{t .Lang "form.edit_title"}}</h2>
     <form method="POST" action="/monitors/{{.Monitor.ID}}" class="space-y-4">
     {{else}}
@@ -95,7 +95,7 @@
             <label for="ignore_tls" class="text-sm text-gray-500 dark:text-gray-400">{{t .Lang "form.ignore_tls"}}</label>
         </div>
         <div class="flex gap-3 pt-2">
-            {{if .IsEdit}}
+            {{if and .IsEdit (not .IsClone)}}
             <button type="submit"
                 class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded transition-colors">
                 {{t .Lang "form.save"}}

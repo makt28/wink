@@ -292,6 +292,47 @@ func (h *Handlers) EditMonitorForm(w http.ResponseWriter, r *http.Request) {
 	h.tmpl.Render(w, "monitor_form.html", data)
 }
 
+// CloneMonitorForm renders the monitor form pre-filled with data from an existing monitor for cloning.
+func (h *Handlers) CloneMonitorForm(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	cfg := h.cfgMgr.Get()
+	lang := getLang(r)
+
+	var found *config.Monitor
+	for i := range cfg.Monitors {
+		if cfg.Monitors[i].ID == id {
+			found = &cfg.Monitors[i]
+			break
+		}
+	}
+
+	if found == nil {
+		http.Error(w, "Monitor not found", http.StatusNotFound)
+		return
+	}
+
+	selectedNIDs := make(map[string]bool, len(found.NotifierIDs))
+	for _, nid := range found.NotifierIDs {
+		selectedNIDs[nid] = true
+	}
+
+	clone := *found
+	clone.Name = found.Name + " (Copy)"
+
+	data := map[string]interface{}{
+		"Groups":       cfg.ContactGroups,
+		"IsEdit":       true,
+		"IsClone":      true,
+		"Monitor":      clone,
+		"Lang":         lang,
+		"Theme":        getTheme(r),
+		"Version":      version,
+		"AllNotifiers": flattenNotifiers(cfg),
+		"SelectedNIDs": selectedNIDs,
+	}
+	h.tmpl.Render(w, "monitor_form.html", data)
+}
+
 // respondError returns a JSON error for AJAX requests, or a plain http.Error fallback.
 func respondError(w http.ResponseWriter, r *http.Request, msg string, status int) {
 	if r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
@@ -580,11 +621,34 @@ func (h *Handlers) SaveSSO(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/settings?saved=1", http.StatusSeeOther)
 }
 
+// GroupsPage renders the groups management page.
+func (h *Handlers) GroupsPage(w http.ResponseWriter, r *http.Request) {
+	cfg := h.cfgMgr.Get()
+	lang := getLang(r)
+
+	flash := ""
+	flashType := ""
+	if r.URL.Query().Get("saved") == "1" {
+		flash = translate(lang, "groups.saved")
+		flashType = "success"
+	}
+
+	data := map[string]interface{}{
+		"Groups":    cfg.ContactGroups,
+		"Lang":      lang,
+		"Theme":     getTheme(r),
+		"Version":   version,
+		"Flash":     flash,
+		"FlashType": flashType,
+	}
+	h.tmpl.Render(w, "groups.html", data)
+}
+
 // CreateGroup handles creating a new contact group.
 func (h *Handlers) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	lang := getLang(r)
 	if err := r.ParseForm(); err != nil {
-		h.renderSettingsWithError(w, r, translate(lang, "settings.error_invalid_form"))
+		respondError(w, r, translate(lang, "settings.error_invalid_form"), http.StatusBadRequest)
 		return
 	}
 
@@ -592,7 +656,7 @@ func (h *Handlers) CreateGroup(w http.ResponseWriter, r *http.Request) {
 
 	name := r.FormValue("group_name")
 	if name == "" {
-		http.Redirect(w, r, "/settings", http.StatusSeeOther)
+		http.Redirect(w, r, "/groups", http.StatusSeeOther)
 		return
 	}
 
@@ -604,12 +668,12 @@ func (h *Handlers) CreateGroup(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.cfgMgr.Save(cfg); err != nil {
 		slog.Error("failed to save contact group", "error", err)
-		h.renderSettingsWithError(w, r, translate(lang, "settings.error_save_failed")+": "+err.Error())
+		respondError(w, r, translate(lang, "settings.error_save_failed")+": "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	slog.Info("contact group created", "id", id, "name", name)
-	http.Redirect(w, r, "/settings?saved=1", http.StatusSeeOther)
+	http.Redirect(w, r, "/groups?saved=1", http.StatusSeeOther)
 }
 
 // DeleteGroup handles deleting a contact group.
@@ -617,14 +681,14 @@ func (h *Handlers) DeleteGroup(w http.ResponseWriter, r *http.Request) {
 	lang := getLang(r)
 	id := r.FormValue("group_id")
 	if id == "" {
-		h.renderSettingsWithError(w, r, translate(lang, "settings.error_missing_id"))
+		respondError(w, r, translate(lang, "settings.error_missing_id"), http.StatusBadRequest)
 		return
 	}
 
 	cfg := h.cfgMgr.Get()
 
 	if _, ok := cfg.ContactGroups[id]; !ok {
-		h.renderSettingsWithError(w, r, translate(lang, "settings.error_not_found"))
+		respondError(w, r, translate(lang, "settings.error_not_found"), http.StatusNotFound)
 		return
 	}
 
@@ -639,12 +703,48 @@ func (h *Handlers) DeleteGroup(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.cfgMgr.Save(cfg); err != nil {
 		slog.Error("failed to delete contact group", "error", err)
-		h.renderSettingsWithError(w, r, translate(lang, "settings.error_save_failed")+": "+err.Error())
+		respondError(w, r, translate(lang, "settings.error_save_failed")+": "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	slog.Info("contact group deleted", "id", id)
-	http.Redirect(w, r, "/settings?saved=1", http.StatusSeeOther)
+	http.Redirect(w, r, "/groups?saved=1", http.StatusSeeOther)
+}
+
+// RenameGroup handles renaming a contact group.
+func (h *Handlers) RenameGroup(w http.ResponseWriter, r *http.Request) {
+	lang := getLang(r)
+	if err := r.ParseForm(); err != nil {
+		respondError(w, r, translate(lang, "settings.error_invalid_form"), http.StatusBadRequest)
+		return
+	}
+
+	id := r.FormValue("group_id")
+	name := r.FormValue("group_name")
+	if id == "" || name == "" {
+		respondError(w, r, translate(lang, "settings.error_missing_fields"), http.StatusBadRequest)
+		return
+	}
+
+	cfg := h.cfgMgr.Get()
+
+	group, ok := cfg.ContactGroups[id]
+	if !ok {
+		respondError(w, r, translate(lang, "settings.error_not_found"), http.StatusNotFound)
+		return
+	}
+
+	group.Name = name
+	cfg.ContactGroups[id] = group
+
+	if err := h.cfgMgr.Save(cfg); err != nil {
+		slog.Error("failed to rename contact group", "error", err)
+		respondError(w, r, translate(lang, "settings.error_save_failed")+": "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info("contact group renamed", "id", id, "name", name)
+	http.Redirect(w, r, "/groups?saved=1", http.StatusSeeOther)
 }
 
 // AddNotifierFlat adds a notifier to the top-level notifier list.
