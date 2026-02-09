@@ -3,7 +3,7 @@ package web
 import (
 	"net/http"
 
-	"github.com/makt/wink/internal/config"
+	"github.com/makt28/wink/internal/config"
 )
 
 // AuthMiddleware checks for SSO header or a valid session cookie on protected routes.

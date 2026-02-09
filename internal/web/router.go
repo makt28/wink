@@ -8,9 +8,9 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/makt/wink/internal/config"
-	"github.com/makt/wink/internal/storage"
-	webassets "github.com/makt/wink/web"
+	"github.com/makt28/wink/internal/config"
+	"github.com/makt28/wink/internal/storage"
+	webassets "github.com/makt28/wink/web"
 )
 
 // i18n translations: lang -> key -> text

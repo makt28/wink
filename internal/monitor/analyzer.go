@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/makt/wink/internal/notify"
-	"github.com/makt/wink/internal/storage"
+	"github.com/makt28/wink/internal/notify"
+	"github.com/makt28/wink/internal/storage"
 )
 
 // monitorState tracks the runtime state for flapping control.

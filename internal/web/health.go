@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/makt/wink/internal/config"
+	"github.com/makt28/wink/internal/config"
 )
 
 var startTime = time.Now()

@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/makt/wink/internal/config"
+	"github.com/makt28/wink/internal/config"
 )
 
 // Router routes alert events to the appropriate contact group's notifiers.

@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/makt/wink/internal/config"
+	"github.com/makt28/wink/internal/config"
 )
 
 type runningMonitor struct {

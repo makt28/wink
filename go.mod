@@ -1,4 +1,4 @@
-module github.com/makt/wink
+module github.com/makt28/wink
 
 go 1.24.0
 

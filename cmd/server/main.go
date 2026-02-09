@@ -9,11 +9,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/makt/wink/internal/config"
-	"github.com/makt/wink/internal/monitor"
-	"github.com/makt/wink/internal/notify"
-	"github.com/makt/wink/internal/storage"
-	"github.com/makt/wink/internal/web"
+	"github.com/makt28/wink/internal/config"
+	"github.com/makt28/wink/internal/monitor"
+	"github.com/makt28/wink/internal/notify"
+	"github.com/makt28/wink/internal/storage"
+	"github.com/makt28/wink/internal/web"
 )
 
 func main() {
