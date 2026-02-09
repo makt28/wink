@@ -7,5 +7,4 @@ dist/
 .DS_Store
 test/
 node_modules/
-package-lock.json
 CLAUDE.md
