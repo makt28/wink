@@ -157,7 +157,11 @@
           : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700');
       sortBtn.innerHTML = '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>';
       sortBtn.title = t('dash.sort');
-      sortBtn.addEventListener('click', function() { sortMode = !sortMode; refreshList(); });
+      sortBtn.addEventListener('click', function() {
+        sortMode = !sortMode;
+        if (sortMode) { stopListPoll(); } else { startListPoll(); }
+        refreshList();
+      });
       sortBar.appendChild(sortBtn);
       listContainer.appendChild(sortBar);
 
