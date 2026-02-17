@@ -51,28 +51,7 @@
         </form>
     </div>
 
-    <!-- Monitor ordering -->
-    {{if .Monitors}}
-    <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">{{t .Lang "groups.monitor_order"}}</h3>
-    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-        <div id="monitor-order-list">
-        {{range .Monitors}}
-        <div class="flex items-center bg-gray-50 dark:bg-gray-700/50 rounded px-4 py-2.5 mb-2" data-monitor-id="{{.ID}}">
-            <div class="flex flex-col mr-3">
-                <button type="button" onclick="moveMonitor('{{.ID}}', -1)" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0.5" title="{{t $.Lang "groups.move_up"}}">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
-                </button>
-                <button type="button" onclick="moveMonitor('{{.ID}}', 1)" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0.5" title="{{t $.Lang "groups.move_down"}}">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                </button>
-            </div>
-            <span class="text-gray-900 dark:text-white text-sm">{{.Name}}</span>
-            <span class="ml-2 text-xs text-gray-400 dark:text-gray-500">{{.Type}} · {{.Target}}</span>
-        </div>
-        {{end}}
-        </div>
-    </div>
-    {{end}}
+
 </div>
 
 <script>
@@ -133,31 +112,6 @@ function moveGroup(id, dir) {
     ids[idx] = ids[newIdx];
     ids[newIdx] = tmp;
     fetch('/api/groups/reorder', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-        body: JSON.stringify({ids: ids})
-    }).then(function(resp) { return resp.json(); }).then(function(data) {
-        if (data.ok) {
-            window.location.reload();
-        } else {
-            showToast(data.message || 'Error', 'error');
-        }
-    }).catch(function() { showToast('Error', 'error'); });
-}
-
-function moveMonitor(id, dir) {
-    var list = document.getElementById('monitor-order-list');
-    var items = list.querySelectorAll('[data-monitor-id]');
-    var ids = [];
-    for (var i = 0; i < items.length; i++) ids.push(items[i].getAttribute('data-monitor-id'));
-    var idx = ids.indexOf(id);
-    if (idx < 0) return;
-    var newIdx = idx + dir;
-    if (newIdx < 0 || newIdx >= ids.length) return;
-    var tmp = ids[idx];
-    ids[idx] = ids[newIdx];
-    ids[newIdx] = tmp;
-    fetch('/api/monitors/reorder', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: JSON.stringify({ids: ids})

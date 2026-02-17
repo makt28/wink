@@ -18,6 +18,8 @@
   var POLL_INTERVAL = 10000;
   var isPageVisible = true;
   var collapsedGroups = {}; // track collapsed group IDs
+  var sortMode = false;
+  var lastGroupOrder = [];
 
   // --- Theme ---
   function getThemeCookie() {
@@ -131,10 +133,12 @@
       if (err || !data) return;
 
       monitors = data.monitors || [];
+      lastGroupOrder = data.group_order || [];
 
       listContainer.innerHTML = '';
 
       if (monitors.length === 0) {
+        sortMode = false;
         var empty = document.createElement('div');
         empty.className = 'flex flex-col items-center justify-center py-16 text-gray-400';
         empty.innerHTML = '<p class="text-lg mb-2">' + t('dash.no_monitors') + '</p>' +
@@ -142,6 +146,20 @@
         listContainer.appendChild(empty);
         return;
       }
+
+      // Sort toggle bar
+      var sortBar = document.createElement('div');
+      sortBar.className = 'flex items-center justify-end px-3 py-1 border-b border-gray-100 dark:border-gray-800';
+      var sortBtn = document.createElement('button');
+      sortBtn.className = 'p-1.5 rounded transition-colors ' +
+        (sortMode
+          ? 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30'
+          : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700');
+      sortBtn.innerHTML = '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>';
+      sortBtn.title = t('dash.sort');
+      sortBtn.addEventListener('click', function() { sortMode = !sortMode; refreshList(); });
+      sortBar.appendChild(sortBtn);
+      listContainer.appendChild(sortBar);
 
       // Group monitors by group_id
       var groups = {};
@@ -168,7 +186,15 @@
         var grp = groups[groupIds[g]];
         var header = document.createElement('div');
         header.className = 'group-header flex items-center gap-2 px-4 py-2.5 font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 cursor-pointer select-none border-b border-gray-100 dark:border-gray-800';
-        header.innerHTML = '<svg class="w-4 h-4 transition-transform group-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>' + escapeHtml(grp.name);
+        var headerHtml = '<svg class="w-4 h-4 transition-transform group-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>' +
+          '<span class="flex-1">' + escapeHtml(grp.name) + '</span>';
+        if (sortMode) {
+          headerHtml += '<span class="flex items-center gap-0.5 ml-auto">' +
+            '<button class="sort-grp-up p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg></button>' +
+            '<button class="sort-grp-down p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></button>' +
+            '</span>';
+        }
+        header.innerHTML = headerHtml;
         header.setAttribute('data-group', groupIds[g]);
         if (collapsedGroups[groupIds[g]]) {
           var arrow = header.querySelector('.group-arrow');
@@ -185,6 +211,14 @@
             if (arrow) arrow.classList.toggle('rotate-180');
           };
         })(groupIds[g]));
+        if (sortMode) {
+          (function(gid) {
+            var grpUp = header.querySelector('.sort-grp-up');
+            var grpDown = header.querySelector('.sort-grp-down');
+            if (grpUp) grpUp.addEventListener('click', function(e) { e.stopPropagation(); moveGroup(gid, -1); });
+            if (grpDown) grpDown.addEventListener('click', function(e) { e.stopPropagation(); moveGroup(gid, 1); });
+          })(groupIds[g]);
+        }
         frag.appendChild(header);
         for (var j = 0; j < grp.items.length; j++) {
           var item = createMonitorItem(grp.items[j], barCount);
@@ -245,8 +279,19 @@
       dotClass = m.is_up ? '' : ' status-dot--down';
     }
 
+    var html = '';
+
+    if (sortMode) {
+      html += '<div class="flex items-center gap-2">';
+      html += '<div class="flex flex-col flex-shrink-0">';
+      html += '<button class="sort-mon-up p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg></button>';
+      html += '<button class="sort-mon-down p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></button>';
+      html += '</div>';
+      html += '<div class="flex-1 min-w-0">';
+    }
+
     // Top row: status dot, name, uptime badges
-    var html = '<div class="flex items-center justify-between mb-2">' +
+    html += '<div class="flex items-center justify-between mb-2">' +
       '<div class="flex items-center gap-2 min-w-0">' +
         '<span class="w-2.5 h-2.5 rounded-full flex-shrink-0 ' + dotColor + dotClass + '"></span>' +
         '<span class="font-medium text-gray-900 dark:text-white truncate">' + escapeHtml(m.name) + '</span>' +
@@ -263,11 +308,23 @@
     // Bottom row: heartbeat bars
     html += '<div class="heartbeat-container" style="height:var(--bar-height-list)"></div>';
 
+    if (sortMode) {
+      html += '</div></div>';
+    }
+
     item.innerHTML = html;
 
     // Render heartbeat bars into the container
     var barsContainer = item.querySelector('.heartbeat-container');
     renderBars(barsContainer, m.heartbeats || [], barCount);
+
+    // Sort button handlers
+    if (sortMode) {
+      var monUp = item.querySelector('.sort-mon-up');
+      var monDown = item.querySelector('.sort-mon-down');
+      if (monUp) monUp.addEventListener('click', function(e) { e.stopPropagation(); moveMonitor(m.id, -1); });
+      if (monDown) monDown.addEventListener('click', function(e) { e.stopPropagation(); moveMonitor(m.id, 1); });
+    }
 
     // Click handler
     item.addEventListener('click', function () {
@@ -281,6 +338,45 @@
     var div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+  }
+
+  // --- Reorder helpers ---
+  function moveMonitor(id, dir) {
+    var ids = monitors.map(function(m) { return m.id; });
+    var idx = ids.indexOf(id);
+    if (idx < 0) return;
+    var newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= ids.length) return;
+    var tmp = ids[idx];
+    ids[idx] = ids[newIdx];
+    ids[newIdx] = tmp;
+    fetch('/api/monitors/reorder', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ids: ids}),
+      credentials: 'same-origin'
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (d.ok) refreshList();
+    });
+  }
+
+  function moveGroup(id, dir) {
+    var ids = lastGroupOrder.slice();
+    var idx = ids.indexOf(id);
+    if (idx < 0) return;
+    var newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= ids.length) return;
+    var tmp = ids[idx];
+    ids[idx] = ids[newIdx];
+    ids[newIdx] = tmp;
+    fetch('/api/groups/reorder', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ids: ids}),
+      credentials: 'same-origin'
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (d.ok) refreshList();
+    });
   }
 
   // --- Monitor Detail ---

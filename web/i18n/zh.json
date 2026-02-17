@@ -38,6 +38,7 @@
   "dash.resume": "恢复",
   "dash.status_paused": "已暂停",
   "dash.ungrouped": "未分组",
+  "dash.sort": "排序",
 
   "form.add_title": "添加监控",
   "form.edit_title": "编辑监控",

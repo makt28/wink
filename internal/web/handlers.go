@@ -653,7 +653,6 @@ func (h *Handlers) GroupsPage(w http.ResponseWriter, r *http.Request) {
 
 	data := map[string]interface{}{
 		"OrderedGroups": buildOrderedGroups(cfg),
-		"Monitors":      cfg.Monitors,
 		"Lang":          lang,
 		"Theme":         getTheme(r),
 		"Version":       version,

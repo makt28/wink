@@ -57,7 +57,7 @@ var jsI18nKeys = []string{
 	"dash.edit", "dash.clone", "dash.delete", "dash.delete_confirm",
 	"dash.type", "dash.interval",
 	"dash.pause", "dash.resume", "dash.status_paused",
-	"dash.ungrouped",
+	"dash.ungrouped", "dash.sort",
 	"settings.test_success", "settings.test_failed",
 	"settings.no_chats_found",
 	"groups.move_up", "groups.move_down", "groups.monitor_order",

@@ -38,6 +38,7 @@
   "dash.resume": "Resume",
   "dash.status_paused": "Paused",
   "dash.ungrouped": "Ungrouped",
+  "dash.sort": "Reorder",
 
   "form.add_title": "Add Monitor",
   "form.edit_title": "Edit Monitor",
