@@ -20,6 +20,23 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// orderedGroup is a template-friendly struct for groups in display order.
+type orderedGroup struct {
+	ID   string
+	Name string
+}
+
+// buildOrderedGroups returns groups in the order specified by cfg.GroupOrder.
+func buildOrderedGroups(cfg config.Config) []orderedGroup {
+	result := make([]orderedGroup, 0, len(cfg.GroupOrder))
+	for _, id := range cfg.GroupOrder {
+		if g, ok := cfg.ContactGroups[id]; ok {
+			result = append(result, orderedGroup{ID: g.ID, Name: g.Name})
+		}
+	}
+	return result
+}
+
 // Handlers holds the HTMX page handlers.
 type Handlers struct {
 	cfgMgr  *config.Manager
@@ -160,8 +177,9 @@ func (h *Handlers) APIMonitors(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"monitors": views,
-		"total":    len(cfg.Monitors),
+		"monitors":    views,
+		"total":       len(cfg.Monitors),
+		"group_order": cfg.GroupOrder,
 	})
 }
 
@@ -232,7 +250,7 @@ func (h *Handlers) MonitorForm(w http.ResponseWriter, r *http.Request) {
 	cfg := h.cfgMgr.Get()
 	lang := getLang(r)
 	data := map[string]interface{}{
-		"Groups":       cfg.ContactGroups,
+		"Groups":       buildOrderedGroups(cfg),
 		"IsEdit":       false,
 		"Lang":         lang,
 		"Theme":        getTheme(r),
@@ -280,7 +298,7 @@ func (h *Handlers) EditMonitorForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := map[string]interface{}{
-		"Groups":       cfg.ContactGroups,
+		"Groups":       buildOrderedGroups(cfg),
 		"IsEdit":       true,
 		"Monitor":      *found,
 		"Lang":         lang,
@@ -320,7 +338,7 @@ func (h *Handlers) CloneMonitorForm(w http.ResponseWriter, r *http.Request) {
 	clone.Name = found.Name + " (Copy)"
 
 	data := map[string]interface{}{
-		"Groups":       cfg.ContactGroups,
+		"Groups":       buildOrderedGroups(cfg),
 		"IsEdit":       true,
 		"IsClone":      true,
 		"Monitor":      clone,
@@ -634,12 +652,14 @@ func (h *Handlers) GroupsPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := map[string]interface{}{
-		"Groups":    cfg.ContactGroups,
-		"Lang":      lang,
-		"Theme":     getTheme(r),
-		"Version":   version,
-		"Flash":     flash,
-		"FlashType": flashType,
+		"OrderedGroups": buildOrderedGroups(cfg),
+		"Monitors":      cfg.Monitors,
+		"Lang":          lang,
+		"Theme":         getTheme(r),
+		"Version":       version,
+		"Flash":         flash,
+		"FlashType":     flashType,
+		"I18nStrings":   buildJSI18n(lang),
 	}
 	h.tmpl.Render(w, "groups.html", data)
 }
@@ -665,6 +685,7 @@ func (h *Handlers) CreateGroup(w http.ResponseWriter, r *http.Request) {
 		ID:   id,
 		Name: name,
 	}
+	cfg.GroupOrder = append(cfg.GroupOrder, id)
 
 	if err := h.cfgMgr.Save(cfg); err != nil {
 		slog.Error("failed to save contact group", "error", err)
@@ -700,6 +721,15 @@ func (h *Handlers) DeleteGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	delete(cfg.ContactGroups, id)
+
+	// Remove from GroupOrder
+	newOrder := make([]string, 0, len(cfg.GroupOrder))
+	for _, gid := range cfg.GroupOrder {
+		if gid != id {
+			newOrder = append(newOrder, gid)
+		}
+	}
+	cfg.GroupOrder = newOrder
 
 	if err := h.cfgMgr.Save(cfg); err != nil {
 		slog.Error("failed to delete contact group", "error", err)
@@ -1194,4 +1224,117 @@ func (h *Handlers) CheckUpdate(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
+}
+
+// ReorderGroups updates the display order of contact groups.
+func (h *Handlers) ReorderGroups(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&req); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "invalid request"})
+		return
+	}
+
+	cfg := h.cfgMgr.Get()
+
+	// Validate: all IDs must exist and match exactly
+	if len(req.IDs) != len(cfg.ContactGroups) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "ID count mismatch"})
+		return
+	}
+	seen := make(map[string]bool, len(req.IDs))
+	for _, id := range req.IDs {
+		if _, ok := cfg.ContactGroups[id]; !ok {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "unknown group ID: " + id})
+			return
+		}
+		if seen[id] {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "duplicate group ID: " + id})
+			return
+		}
+		seen[id] = true
+	}
+
+	cfg.GroupOrder = req.IDs
+
+	if err := h.cfgMgr.Save(cfg); err != nil {
+		slog.Error("failed to reorder groups", "error", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "failed to save"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{"ok": true})
+}
+
+// ReorderMonitors updates the display order of monitors by rearranging the slice.
+func (h *Handlers) ReorderMonitors(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&req); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "invalid request"})
+		return
+	}
+
+	cfg := h.cfgMgr.Get()
+
+	if len(req.IDs) != len(cfg.Monitors) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "ID count mismatch"})
+		return
+	}
+
+	// Build index for fast lookup
+	byID := make(map[string]config.Monitor, len(cfg.Monitors))
+	for _, m := range cfg.Monitors {
+		byID[m.ID] = m
+	}
+
+	reordered := make([]config.Monitor, 0, len(req.IDs))
+	seen := make(map[string]bool, len(req.IDs))
+	for _, id := range req.IDs {
+		m, ok := byID[id]
+		if !ok {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "unknown monitor ID: " + id})
+			return
+		}
+		if seen[id] {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "duplicate monitor ID: " + id})
+			return
+		}
+		seen[id] = true
+		reordered = append(reordered, m)
+	}
+
+	cfg.Monitors = reordered
+
+	if err := h.cfgMgr.Save(cfg); err != nil {
+		slog.Error("failed to reorder monitors", "error", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "failed to save"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{"ok": true})
 }

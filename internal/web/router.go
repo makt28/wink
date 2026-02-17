@@ -60,6 +60,7 @@ var jsI18nKeys = []string{
 	"dash.ungrouped",
 	"settings.test_success", "settings.test_failed",
 	"settings.no_chats_found",
+	"groups.move_up", "groups.move_down", "groups.monitor_order",
 }
 
 // buildJSI18n returns a map of translation keys needed by JavaScript.
@@ -236,6 +237,8 @@ func NewRouter(cfgMgr *config.Manager, histMgr *storage.HistoryManager, stopCh <
 		r.Post("/api/notifiers/{id}/test", handlers.TestNotifier)
 		r.Post("/api/telegram/get-updates", handlers.TelegramGetUpdates)
 		r.Get("/api/check-update", handlers.CheckUpdate)
+		r.Post("/api/groups/reorder", handlers.ReorderGroups)
+		r.Post("/api/monitors/reorder", handlers.ReorderMonitors)
 
 		r.Post("/logout", auth.Logout)
 	})

@@ -160,8 +160,10 @@
 
       var frag = document.createDocumentFragment();
 
-      // Render grouped monitors
-      var groupIds = Object.keys(groups);
+      // Render grouped monitors (use server-provided order)
+      var groupIds = (data.group_order && data.group_order.length > 0)
+        ? data.group_order.filter(function(id) { return groups[id]; })
+        : Object.keys(groups);
       for (var g = 0; g < groupIds.length; g++) {
         var grp = groups[groupIds[g]];
         var header = document.createElement('div');

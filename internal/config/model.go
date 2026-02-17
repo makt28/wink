@@ -18,6 +18,7 @@ type Config struct {
 	System        SystemConfig            `json:"system"`
 	Auth          AuthConfig              `json:"auth"`
 	ContactGroups map[string]ContactGroup `json:"contact_groups"`
+	GroupOrder    []string                `json:"group_order,omitempty"`
 	Notifiers     []NotifierConfig        `json:"notifiers"`
 	Monitors      []Monitor               `json:"monitors"`
 }
@@ -165,6 +166,34 @@ func (c *Config) ApplyDefaults() {
 		if c.Notifiers[i].ID == "" {
 			c.Notifiers[i].ID = generateID()
 		}
+	}
+	// Reconcile GroupOrder: remove stale IDs, append missing IDs
+	if c.GroupOrder == nil {
+		c.GroupOrder = make([]string, 0, len(c.ContactGroups))
+		for id := range c.ContactGroups {
+			c.GroupOrder = append(c.GroupOrder, id)
+		}
+	} else {
+		existing := make(map[string]bool, len(c.ContactGroups))
+		for id := range c.ContactGroups {
+			existing[id] = true
+		}
+		// Remove stale IDs
+		clean := make([]string, 0, len(c.GroupOrder))
+		seen := make(map[string]bool, len(c.GroupOrder))
+		for _, id := range c.GroupOrder {
+			if existing[id] && !seen[id] {
+				clean = append(clean, id)
+				seen[id] = true
+			}
+		}
+		// Append missing IDs
+		for id := range c.ContactGroups {
+			if !seen[id] {
+				clean = append(clean, id)
+			}
+		}
+		c.GroupOrder = clean
 	}
 }
 
