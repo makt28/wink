@@ -1,3 +1,7 @@
+#crontab -e
+#0 4 * * * /usr/local/bin/update-wink.sh >> /var/log/wink_update.log 2>&1
+#chmod +x /usr/local/bin/update-wink.sh
+
 #!/bin/sh
 # --- 配置变量 ---
 REPO="makt28/wink"
