@@ -28,23 +28,18 @@ type Prober interface {
 // --- HTTP Prober ---
 
 type HTTPProber struct {
-	IgnoreTLS bool
+	client *http.Client
 }
 
 func (p *HTTPProber) Probe(ctx context.Context, target string) ProbeResult {
 	start := time.Now()
-
-	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: p.IgnoreTLS},
-	}
-	client := &http.Client{Transport: transport}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
 	if err != nil {
 		return ProbeResult{Up: false, Error: fmt.Sprintf("create request: %v", err)}
 	}
 
-	resp, err := client.Do(req)
+	resp, err := p.client.Do(req)
 	if err != nil {
 		return ProbeResult{
 			Up:      false,
@@ -133,7 +128,18 @@ func (p *ICMPProber) Probe(ctx context.Context, target string) ProbeResult {
 func NewProber(monitorType string, ignoreTLS bool) Prober {
 	switch monitorType {
 	case "http":
-		return &HTTPProber{IgnoreTLS: ignoreTLS}
+		transport := &http.Transport{
+			TLSClientConfig:       &tls.Config{InsecureSkipVerify: ignoreTLS},
+			MaxIdleConns:          100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		}
+		client := &http.Client{
+			Transport: transport,
+			// Timeout is handled by context passed to Probe
+		}
+		return &HTTPProber{client: client}
 	case "tcp":
 		return &TCPProber{}
 	case "ping":

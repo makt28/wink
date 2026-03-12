@@ -60,23 +60,26 @@ func (r *Router) Notify(event AlertEvent) {
 			continue
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		if err := notifier.Send(ctx, event); err != nil {
-			slog.Error("notification send failed",
-				"type", nc.Type,
-				"notifier_id", id,
-				"monitor_id", event.MonitorID,
-				"error", err,
-			)
-		} else {
-			slog.Info("notification sent",
-				"type", nc.Type,
-				"notifier_id", id,
-				"monitor_id", event.MonitorID,
-				"event_type", event.Type,
-			)
-		}
-		cancel()
+		go func(id string, nc config.NotifierConfig) {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			if err := notifier.Send(ctx, event); err != nil {
+				slog.Error("notification send failed",
+					"type", nc.Type,
+					"notifier_id", id,
+					"monitor_id", event.MonitorID,
+					"error", err,
+				)
+			} else {
+				slog.Info("notification sent",
+					"type", nc.Type,
+					"notifier_id", id,
+					"monitor_id", event.MonitorID,
+					"event_type", event.Type,
+				)
+			}
+		}(id, nc)
 	}
 }
 

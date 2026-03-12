@@ -2,6 +2,7 @@ package web
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/makt28/wink/internal/config"
 )
@@ -19,8 +20,14 @@ func AuthMiddleware(sessions *SessionStore, cfgMgr *config.Manager) func(http.Ha
 				}
 			}
 
+			isAPI := r.Header.Get("X-Requested-With") == "XMLHttpRequest" || strings.HasPrefix(r.URL.Path, "/api/")
+
 			cookie, err := r.Cookie("wink_session")
 			if err != nil {
+				if isAPI {
+					w.WriteHeader(http.StatusUnauthorized)
+					return
+				}
 				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
 			}
@@ -35,6 +42,10 @@ func AuthMiddleware(sessions *SessionStore, cfgMgr *config.Manager) func(http.Ha
 					MaxAge:   -1,
 					HttpOnly: true,
 				})
+				if isAPI {
+					w.WriteHeader(http.StatusUnauthorized)
+					return
+				}
 				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
 			}
