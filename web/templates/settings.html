@@ -456,16 +456,31 @@ function fetchChatIDs(btn) {
             resultsDiv.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 py-1">' + (_i18n['settings.no_chats_found'] || 'No chats found') + '</p>';
             return;
         }
-        var html = '';
+        resultsDiv.innerHTML = '';
         data.chats.forEach(function(c) {
-            var label = c.title + ' <span class="text-gray-400">(' + c.id + ', ' + c.type + ')</span>';
+            var chatID = String(c.id || '');
+            var row = document.createElement('button');
+            row.type = 'button';
+            row.className = 'block w-full text-left text-xs px-2 py-1 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded text-gray-700 dark:text-gray-300';
+            row.addEventListener('click', function() { pickChatID(row, chatID); });
+
+            var titleNode = document.createTextNode(c.title || '');
+            row.appendChild(titleNode);
+
+            var meta = document.createElement('span');
+            meta.className = 'text-gray-400';
+            meta.textContent = ' (' + chatID + ', ' + (c.type || '') + ')';
+            row.appendChild(meta);
+
             if (c.message) {
-                label += ' <span class="text-gray-400 italic">"' + c.message.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '"</span>';
+                var msg = document.createElement('span');
+                msg.className = 'text-gray-400 italic';
+                msg.textContent = ' "' + c.message + '"';
+                row.appendChild(msg);
             }
-            html += '<button type="button" onclick="pickChatID(this, \'' + c.id.replace(/'/g, "\\'") + '\')" class="block w-full text-left text-xs px-2 py-1 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded text-gray-700 dark:text-gray-300">' +
-                label + '</button>';
+
+            resultsDiv.appendChild(row);
         });
-        resultsDiv.innerHTML = html;
     })
     .catch(function() {
         btn.textContent = origText;

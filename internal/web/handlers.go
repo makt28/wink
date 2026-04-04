@@ -1280,7 +1280,8 @@ func (h *Handlers) ReorderGroups(w http.ResponseWriter, r *http.Request) {
 // ReorderMonitors updates the display order of monitors by rearranging the slice.
 func (h *Handlers) ReorderMonitors(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		IDs []string `json:"ids"`
+		GroupID string   `json:"group_id"`
+		IDs     []string `json:"ids"`
 	}
 	if err := json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&req); err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -1291,16 +1292,30 @@ func (h *Handlers) ReorderMonitors(w http.ResponseWriter, r *http.Request) {
 
 	cfg := h.cfgMgr.Get()
 
-	if len(req.IDs) != len(cfg.Monitors) {
+	inGroup := func(m config.Monitor) bool {
+		if req.GroupID == "" {
+			return m.GroupID == ""
+		}
+		return m.GroupID == req.GroupID
+	}
+
+	groupMonitors := make([]config.Monitor, 0, len(cfg.Monitors))
+	for _, m := range cfg.Monitors {
+		if inGroup(m) {
+			groupMonitors = append(groupMonitors, m)
+		}
+	}
+
+	if len(req.IDs) != len(groupMonitors) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "ID count mismatch"})
+		json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "ID count mismatch for group"})
 		return
 	}
 
-	// Build index for fast lookup
-	byID := make(map[string]config.Monitor, len(cfg.Monitors))
-	for _, m := range cfg.Monitors {
+	// Build index for fast lookup inside the target group only.
+	byID := make(map[string]config.Monitor, len(groupMonitors))
+	for _, m := range groupMonitors {
 		byID[m.ID] = m
 	}
 
@@ -1311,7 +1326,7 @@ func (h *Handlers) ReorderMonitors(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "unknown monitor ID: " + id})
+			json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "unknown monitor ID in group: " + id})
 			return
 		}
 		if seen[id] {
@@ -1324,7 +1339,18 @@ func (h *Handlers) ReorderMonitors(w http.ResponseWriter, r *http.Request) {
 		reordered = append(reordered, m)
 	}
 
-	cfg.Monitors = reordered
+	// Rebuild global slice by replacing only this group's relative order.
+	rebuilt := make([]config.Monitor, 0, len(cfg.Monitors))
+	groupIdx := 0
+	for _, m := range cfg.Monitors {
+		if inGroup(m) {
+			rebuilt = append(rebuilt, reordered[groupIdx])
+			groupIdx++
+			continue
+		}
+		rebuilt = append(rebuilt, m)
+	}
+	cfg.Monitors = rebuilt
 
 	if err := h.cfgMgr.Save(cfg); err != nil {
 		slog.Error("failed to reorder monitors", "error", err)

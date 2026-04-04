@@ -194,7 +194,7 @@ func (ah *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ah *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	ip := r.RemoteAddr
+	ip := clientIPKey(r.RemoteAddr)
 
 	if ah.limiter.IsLocked(ip) {
 		http.Error(w, "Too many login attempts. Try again later.", http.StatusTooManyRequests)
@@ -231,6 +231,7 @@ func (ah *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
+		Secure:   r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https",
 	})
 
 	slog.Info("login successful", "username", username, "ip", ip)
@@ -250,6 +251,7 @@ func (ah *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   -1,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
+		Secure:   r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https",
 	})
 
 	http.Redirect(w, r, "/login", http.StatusSeeOther)

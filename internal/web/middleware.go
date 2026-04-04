@@ -11,10 +11,10 @@ import (
 func AuthMiddleware(sessions *SessionStore, cfgMgr *config.Manager) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Check SSO header first (trusts reverse proxy Remote-User header)
+			// Check SSO header first, but only trust loopback proxy sources.
 			cfg := cfgMgr.Get()
-			if cfg.Auth.SSO.Enabled {
-				if user := r.Header.Get("Remote-User"); user != "" {
+			if cfg.Auth.SSO.Enabled && isTrustedSSOSource(r.RemoteAddr) {
+				if user := strings.TrimSpace(r.Header.Get("Remote-User")); user != "" {
 					next.ServeHTTP(w, r)
 					return
 				}

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+
+	"github.com/makt28/wink/internal/config"
 )
 
 // MigrateHistoryFile checks the version of a history file and runs migrations if needed.
@@ -68,11 +70,11 @@ func MigrateConfigFile(filePath string) error {
 		}
 	}
 
-	if version == CurrentHistoryVersion {
+	if version == config.CurrentConfigVersion {
 		return nil
 	}
 
-	slog.Info("migrating config file", "from_version", version, "to_version", CurrentHistoryVersion)
+	slog.Info("migrating config file", "from_version", version, "to_version", config.CurrentConfigVersion)
 
 	// Migration chain placeholder
 	// Example: if version == 0 { migrateConfigV0toV1(raw, filePath) }
