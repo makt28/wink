@@ -197,7 +197,7 @@ Returns (no auth required):
 ```json
 {
   "status": "ok",
-  "version": "0.1.0",
+  "version": "0.1.5",
   "uptime_seconds": 86400,
   "monitor_count": 5
 }
